@@ -24,7 +24,7 @@ To install the project, clone the repository and navigate to the project directo
 
 ```bash
 git clone <repository-url>
-cd task-tracker-cli
+cd task_tracker
 ```
 
 Then, run the following command to download the dependencies:
@@ -38,7 +38,17 @@ go mod tidy
 To run the application, use the following command:
 
 ```bash
-go run cmd/main.go
+#to show all commands
+go run cmd/main.go 
+#to add task
+go run cmd/main.go add ["Task name"]
+#to list all tasks
+go run cmd/main.go list 
+#to update task by id
+go run cmd/main.go update [id] ["New task name"}
+#to delete task by id
+go run cmd/main.go delete [id]
+
 ```
 
 ## Features
@@ -56,7 +66,8 @@ status: The status of the task (todo, in-progress, done)
 createdAt: The date and time when the task was created
 updatedAt: The date and time when the task was last updated
 Example:
-{"id":0,"title":"perviy1","description":"somedescrp","status":true}
+{"id":5,"title":"texttToUpdate","status":true,"createdAt":"2025-09-24T17:38:04.260268+03:00","updatedAt":"2025-09-25T10:01:51.6988301+03:00"}
+
 
 ## Contributing
 

@@ -58,10 +58,11 @@ func LoadTasksUpToFile(filename string) (map[int]task.Task, error) {
 	return tasks, err
 }
 
-// возвращает форматированую строку структуры 
+// возвращает форматированую строку структуры
 func ListTask(task task.Task) string {
 	return fmt.Sprintf("[ID:%d] Title: %s\t Status:%v\t CreatedAt:%s\t UpdatedAt: %s\n", task.ID, task.Title, task.Status, task.CreatedAt, task.UpdatedAt)
 }
+
 // изменяет мапу по айди и записывает в файл
 func UpdateTask(filename string) error {
 	tasks, err := LoadTasksUpToFile(filename)
@@ -71,15 +72,15 @@ func UpdateTask(filename string) error {
 
 	idToUpdate, err := strconv.Atoi(os.Args[2])
 	if err != nil {
-		return fmt.Errorf("ошибка парсинга аргумента id %v", err)
+		return fmt.Errorf("ошибка парсинга аргумента id: введите число! %v", err)
 	}
 	updatedTitle := os.Args[3]
 	updatedAt := time.Now()
 	task := task.AddTask(tasks[idToUpdate].ID, updatedTitle, true, tasks[idToUpdate].CreatedAt, &updatedAt)
 	tasks[idToUpdate] = *task
-	
+
 	err = SaveInFileWithTrunc(filename, tasks)
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("ошибка записи в файл deleted: %v", err)
 	}
 
@@ -95,12 +96,12 @@ func DeleteTask(filename string) error {
 
 	idKey, err := strconv.Atoi(os.Args[2])
 	if err != nil {
-		return fmt.Errorf("ошибка парсинга аргумента: %v", err)
+		return fmt.Errorf("ошибка парсинга аргумента id: введите число! %v", err)
 	}
 	delete(tasks, idKey)
 
 	err = SaveInFileWithTrunc(filename, tasks)
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("ошибка записи в файл deleted: %v", err)
 	}
 	return err
@@ -121,8 +122,8 @@ func FindLastId(filename string) (int, error) {
 	return lastID, nil
 }
 
-// декодирует мапу и записывает в json файл 
-func SaveInFileWithTrunc(filename string, tasks map[int]task.Task) error{
+// декодирует мапу и записывает в json файл
+func SaveInFileWithTrunc(filename string, tasks map[int]task.Task) error {
 	jsonFile, err := os.OpenFile(filename, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("cannot create/open jsonfile: %w", err)
@@ -135,6 +136,10 @@ func SaveInFileWithTrunc(filename string, tasks map[int]task.Task) error{
 		}
 	}
 	return err
+}
+
+func СommandList() string {
+	return ("\tСписок команд:\n1. add [Название]\n2. list\n3. update [id] [Новое название]\n4. delete [id]")
 }
 
 // Подсчитывает количество строк в файле (каждая задача по команде 'add' записывается с новой строки)
