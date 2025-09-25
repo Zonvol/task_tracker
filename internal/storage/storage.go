@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path"
 	"strconv"
 	"task_tracker/internal/task"
 	"time"
@@ -13,9 +14,23 @@ import (
 
 var tasks map[int]task.Task = make(map[int]task.Task)
 
+// получение пути к файлу, current directory + filename
+func GetFilepath()(string,error){
+	currentDir, err := os.Getwd()
+	if err != nil{
+		return "", fmt.Errorf("cannot get filepath:%w",err)
+	}
+	filename := "tasks.json" 
+	return path.Join(currentDir,filename), nil
+}
+
 // Сохраняет задачу в файл
-func SaveTasksToFile(filename string, task *task.Task) error {
-	jTask := *task
+func SaveTasksToFile(task *task.Task) error {
+	filename, err := GetFilepath()
+	if err != nil{
+		return fmt.Errorf("cannot get filepath:%w",err)
+	}
+	jTask := task
 	data, err := json.Marshal(jTask)
 	if err != nil {
 		return fmt.Errorf("cannot marshalling json file:%w", err)
@@ -31,13 +46,36 @@ func SaveTasksToFile(filename string, task *task.Task) error {
 	if err != nil {
 		return err
 	}
+	return err
+}
 
+// декодирует мапу и записывает в json файл
+func SaveInFileWithTrunc(tasks map[int]task.Task) error {
+	filename, err := GetFilepath()
+	if err != nil{
+		return fmt.Errorf("cannot get filepath:%w",err)
+	}
+	jsonFile, err := os.OpenFile(filename, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("cannot create/open jsonfile: %w", err)
+	}
+
+	encoder := json.NewEncoder(jsonFile)
+	for _, v := range tasks {
+		if err := encoder.Encode(v); err != nil {
+			return fmt.Errorf("ошибка encode: %v", err)
+		}
+	}
 	return err
 }
 
 // достает данные из файла и записывает в map(может вернуть io.EOF)
-func LoadTasksUpToFile(filename string) (map[int]task.Task, error) {
-	jsonFile, err := os.OpenFile(filename, os.O_APPEND|os.O_EXCL|os.O_RDONLY, 0644)
+func LoadTasksUpToFile() (map[int]task.Task, error) {
+	filename, err := GetFilepath()
+	if err != nil{
+		return nil, fmt.Errorf("cannot get filepath:%w",err)
+	}
+	jsonFile, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_RDONLY, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open jsonfile: %v", err)
 	}
@@ -58,14 +96,29 @@ func LoadTasksUpToFile(filename string) (map[int]task.Task, error) {
 	return tasks, err
 }
 
-// возвращает форматированую строку структуры
-func ListTask(task task.Task) string {
-	return fmt.Sprintf("[ID:%d] Title: %s\t Status:%v\t CreatedAt:%s\t UpdatedAt: %s\n", task.ID, task.Title, task.Status, task.CreatedAt, task.UpdatedAt)
+// Создает файл если его не было, добавляет задачу
+func AddTaskToFile() error {
+	
+	lastID, err := FindLastId()
+	if err != nil {
+		return fmt.Errorf("ошибка нахождения последнего айди:%w", err)
+	}
+
+	createdTime := time.Now()
+	task := task.AddTask(lastID+1, os.Args[2], true, createdTime, nil)
+
+	log.Print("Task added:\n", ListTask(*task))
+
+	err = SaveTasksToFile(task)
+	if err != nil {
+		return fmt.Errorf("error saving tasks to file:%w", err)
+	}
+	return nil
 }
 
 // изменяет мапу по айди и записывает в файл
-func UpdateTask(filename string) error {
-	tasks, err := LoadTasksUpToFile(filename)
+func UpdateTask() error {
+	tasks, err := LoadTasksUpToFile()
 	if err != nil && err != io.EOF {
 		return fmt.Errorf("ошибка при загрузке данных с файла:%v", err)
 	}
@@ -79,7 +132,7 @@ func UpdateTask(filename string) error {
 	task := task.AddTask(tasks[idToUpdate].ID, updatedTitle, true, tasks[idToUpdate].CreatedAt, &updatedAt)
 	tasks[idToUpdate] = *task
 
-	err = SaveInFileWithTrunc(filename, tasks)
+	err = SaveInFileWithTrunc(tasks)
 	if err != nil {
 		return fmt.Errorf("ошибка записи в файл deleted: %v", err)
 	}
@@ -88,8 +141,8 @@ func UpdateTask(filename string) error {
 }
 
 // Удаляет таску по айди.
-func DeleteTask(filename string) error {
-	tasks, err := LoadTasksUpToFile(filename)
+func DeleteTask() error {
+	tasks, err := LoadTasksUpToFile()
 	if err != nil && err != io.EOF {
 		return fmt.Errorf("ошибка при загрузке данных с файла:%v", err)
 	}
@@ -100,7 +153,7 @@ func DeleteTask(filename string) error {
 	}
 	delete(tasks, idKey)
 
-	err = SaveInFileWithTrunc(filename, tasks)
+	err = SaveInFileWithTrunc(tasks)
 	if err != nil {
 		return fmt.Errorf("ошибка записи в файл deleted: %v", err)
 	}
@@ -108,8 +161,8 @@ func DeleteTask(filename string) error {
 }
 
 // Загружает файл в мапу, ищет последнее айди.
-func FindLastId(filename string) (int, error) {
-	tasks, err := LoadTasksUpToFile(filename)
+func FindLastId() (int, error) {
+	tasks, err := LoadTasksUpToFile()
 	if err != nil && err != io.EOF {
 		log.Fatal("Ошибка при загрузке данных с файла(findLastId):", err)
 	}
@@ -122,22 +175,13 @@ func FindLastId(filename string) (int, error) {
 	return lastID, nil
 }
 
-// декодирует мапу и записывает в json файл
-func SaveInFileWithTrunc(filename string, tasks map[int]task.Task) error {
-	jsonFile, err := os.OpenFile(filename, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return fmt.Errorf("cannot create/open jsonfile: %w", err)
-	}
-
-	encoder := json.NewEncoder(jsonFile)
-	for _, v := range tasks {
-		if err := encoder.Encode(v); err != nil {
-			return fmt.Errorf("ошибка encode: %v", err)
-		}
-	}
-	return err
+// возвращает форматированую строку структуры задачи
+func ListTask(task task.Task) string {
+	return fmt.Sprintf("[ID:%d] Title: %s\t Status:%v\t CreatedAt:%s\t UpdatedAt: %s\n", task.ID, task.Title, task.Status, task.CreatedAt, task.UpdatedAt)
 }
 
+
+// возвращает форматированую строку со списком команд
 func СommandList() string {
 	return ("\tСписок команд:\n1. add [Название]\n2. list\n3. update [id] [Новое название]\n4. delete [id]")
 }
