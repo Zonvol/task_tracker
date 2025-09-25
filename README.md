@@ -48,6 +48,16 @@ go run cmd/main.go
 - Delete tasks
 - List all tasks
 
+## json struct
+
+id: A unique identifier for the task
+description: A short description of the task
+status: The status of the task (todo, in-progress, done)
+createdAt: The date and time when the task was created
+updatedAt: The date and time when the task was last updated
+Example:
+{"id":0,"title":"perviy1","description":"somedescrp","status":true}
+
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request for any enhancements or bug fixes.

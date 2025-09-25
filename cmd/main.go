@@ -5,27 +5,33 @@ import (
 	"io"
 	"log"
 	"os"
-	"strconv"
 	"task_tracker/internal/storage"
 	"task_tracker/internal/task"
+	"time"
 )
 
 
 var filename string = "tasks.json" 
 
 func main() {
-	// Точка входа программы
-	// 
-	// add "Заголовок" "Описание"
+
+	// Точка входа программы:
+	// go run .\cmd\main.go [команда]...
+	// add [Заголовок]
 	// list
-	// 
+	// update [id] [Новый заголовок]
+	// delete [id]
+
 	switch  os.Args[1]{
 	case "add":
-		countID, err := storage.CounterID(filename)
+
+		lastID, err := storage.FindLastId(filename)
 		if err != nil{
-			log.Fatal("Ошибка счетчика:",err)
+			log.Fatal("Ошибка нахождения последнего айди:",err)
 		}
-		task := task.AddTask(countID, os.Args[2], os.Args[3], true)
+
+		createdTime := time.Now()
+		task := task.AddTask(lastID + 1, os.Args[2], true, createdTime, nil)
 	
 		log.Println("Task added:", task)
 	
@@ -38,34 +44,21 @@ func main() {
 		if err != nil && err != io.EOF{
 			log.Fatal("Ошибка при загрузке данных с файла:", err)
 		} 
-		for i, v := range tasks {
-			fmt.Print(tasks,storage.ListTask(i, v))	
+		for _, v := range tasks {
+			fmt.Print(storage.ListTask(v))	
 		}
 		
 	case "update":
 		// Call UpdateTask function
-		
-		// err = storage.UpdateTask(tasks, filename)
-		// if err != nil{
-		// 	log.Fatal("Ошибка записи в файл Update:",err)
-		// }
+		err := storage.UpdateTask(filename)
+		if err != nil{
+			log.Fatal("Ошибка записи в файл Update:",err)
+		}
 		
 	case "delete":
 		// Call DeleteTask function
-		//Запись данных файла в мапу
-		tasks, err := storage.LoadTasksUpToFile(filename)
-			if err != nil && err != io.EOF{
-			log.Fatal("Ошибка при загрузке данных с файла:", err)
-		} 
-		// Получение ID для удаления и удаление 
-		idKey, err := strconv.Atoi(os.Args[2])
-		if err != nil{
-			log.Fatal("Ошибка парсинга аргумента:", err)
-		}
-		delete(tasks, idKey)
-
 		// Запись измененной мапы в файл
-		err = storage.DeleteTask(tasks, filename)
+		err := storage.DeleteTask(filename)
 		if err != nil{
 			log.Fatal("Error saving tasks to file:", err)
 		}
