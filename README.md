@@ -36,8 +36,8 @@ go mod tidy
 ## Usage
 
 To run the application, use the following command:
-
-```bash
+1. commands to run .go file
+```bash 
 #to show all commands
 go run cmd/main.go 
 #to add task
@@ -48,7 +48,21 @@ go run cmd/main.go list
 go run cmd/main.go update [id] ["New task name"}
 #to delete task by id
 go run cmd/main.go delete [id]
-
+```
+2. commands to run .exe file
+```bash 
+#Assembly and launch from the root directory
+go build -o task_tracker.exe cmd/main.go
+#to show all commands
+.\task_tracker.exe
+#to add task
+.\task_tracker.exe add ["Task name"]
+#to list all tasks
+.\task_tracker.exe list 
+#to update task by id
+.\task_tracker.exe update [id] ["New task name"}
+#to delete task by id
+.\task_tracker.exe delete [id]
 ```
 
 ## Features
@@ -67,7 +81,6 @@ createdAt: The date and time when the task was created
 updatedAt: The date and time when the task was last updated
 Example:
 {"id":5,"title":"texttToUpdate","status":true,"createdAt":"2025-09-24T17:38:04.260268+03:00","updatedAt":"2025-09-25T10:01:51.6988301+03:00"}
-
 
 ## Contributing
 

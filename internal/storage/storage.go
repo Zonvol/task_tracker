@@ -30,8 +30,8 @@ func SaveTasksToFile(task *task.Task) error {
 	if err != nil{
 		return fmt.Errorf("cannot get filepath:%w",err)
 	}
-	jTask := task
-	data, err := json.Marshal(jTask)
+	
+	data, err := json.Marshal(task)
 	if err != nil {
 		return fmt.Errorf("cannot marshalling json file:%w", err)
 	}
